@@ -1,0 +1,33 @@
+networks:
+  oracle-network:
+    driver: bridge
+    name: oracle-network
+
+volumes:
+  oradata-vol:
+    name: oradata-vol
+  archivelog-vol:
+    name: archivelog-vol
+
+services:
+  oracle:
+    image: oracle/database:${ORACLE_VERSION:-19.3.0}-ee
+    container_name: oradb01
+    privileged: true
+    platform: linux/amd64
+    ports:
+      - "1521:1521"
+      - "5500:5500"
+    environment:
+      - ORACLE_SID=${ORACLE_SID}
+      - ORACLE_PWD=${ORACLE_PWD}
+      - ORACLE_PDB=${ORACLE_PDB}
+      - CREATE_PDB=${CREATE_PDB}
+      - ORACLE_EDITION=EE
+      - ORACLE_CHARACTERSET=AL32UTF8
+    volumes:
+      - oradata-vol:/opt/oracle/oradata
+      - archivelog-vol:/opt/oracle/archivelog
+    networks:
+      - oracle-network
+    restart: unless-stopped

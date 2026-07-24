@@ -1,3 +1,21 @@
+### IntelliJ IDEA ###
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
 p13390677_112040_Linux-x86-64_1of7.zip
 p13390677_112040_Linux-x86-64_2of7.zip
 linuxamd64_12102_database_1of2.zip

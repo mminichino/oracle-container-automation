@@ -14,6 +14,11 @@
 
 set -e
 
+function err_exit {
+  echo "[!] Error: $1"
+  exit 1
+}
+
 # Check whether ORACLE_SID is passed on
 export ORACLE_SID=${1:-oradb}
 
@@ -74,11 +79,11 @@ echo "$ORACLE_SID=
     )
   )" > $ORACLE_HOME/network/admin/tnsnames.ora
 
-# Remove second control file
-sqlplus / as sysdba << EOF
-   ALTER SYSTEM SET control_files='$ORACLE_BASE/oradata/$ORACLE_SID/control01.ctl' scope=spfile;
-   exit;
-EOF
+## Remove second control file
+#sqlplus / as sysdba << EOF
+#   ALTER SYSTEM SET control_files='$ORACLE_BASE/oradata/$ORACLE_SID/control01.ctl' scope=spfile;
+#   exit;
+#EOF
 
 if [ "$CREATE_PDB" -eq 1 ];then
 echo -n "Set PDB to auto open ..."
@@ -91,3 +96,77 @@ fi
 
 # Remove temporary response file
 rm $ORACLE_BASE/dbca.rsp
+
+LOGDIR=$ORACLE_BASE/archivelog
+
+echo -n "Setting archive log destination to $LOGDIR ..."
+sqlplus -S / as sysdba << EOF
+   set heading off;
+   set pagesize 0;
+   set feedback off;
+   ALTER SYSTEM SET log_archive_dest_1='location=$LOGDIR' SCOPE=spfile;
+   exit;
+EOF
+if [ $? -ne 0 ]; then
+   err_exit "Failed to set log destination"
+else
+   echo "Done."
+fi
+
+echo -n "Shutting down instance ..."
+sqlplus -S / as sysdba << EOF
+   set heading off;
+   set pagesize 0;
+   set feedback off;
+   shutdown immediate;
+   exit;
+EOF
+if [ $? -ne 0 ]; then
+   err_exit "Failed to shutdown instance $ORACLE_SID ..."
+else
+   echo "Done."
+fi
+
+echo -n "Starting instance mounted ..."
+sqlplus -S / as sysdba << EOF
+   set heading off;
+   set pagesize 0;
+   set feedback off;
+   startup mount;
+   exit;
+EOF
+if [ $? -ne 0 ]; then
+   err_exit "Failed to start instance $ORACLE_SID ..."
+else
+   echo "Done."
+fi
+
+echo -n "Setting archive log mode ..."
+sqlplus -S / as sysdba << EOF
+   set heading off;
+   set pagesize 0;
+   set feedback off;
+   ALTER DATABASE ARCHIVELOG;
+   ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+   ALTER SYSTEM SET undo_retention = 86400 SCOPE=BOTH;
+   exit;
+EOF
+if [ $? -ne 0 ]; then
+   err_exit "Failed to set archive log mode for $ORACLE_SID ..."
+else
+   echo "Done."
+fi
+
+echo -n "Opening database ..."
+sqlplus -S / as sysdba << EOF
+   set heading off;
+   set pagesize 0;
+   set feedback off;
+   ALTER DATABASE OPEN;
+   exit;
+EOF
+if [ $? -ne 0 ]; then
+   err_exit "Failed to open $ORACLE_SID ..."
+else
+   echo "Done."
+fi

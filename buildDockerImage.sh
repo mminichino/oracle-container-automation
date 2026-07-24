@@ -39,7 +39,8 @@ echo "Building image '$IMAGE_NAME' ..."
 
 # BUILD THE IMAGE (replace all environment variables)
 BUILD_START=$(date '+%s')
-docker build --force-rm=true --no-cache=true \
+docker rmi $IMAGE_NAME 2>/dev/null || true
+docker buildx build --platform linux/amd64 --force-rm=true --no-cache=true \
        -t $IMAGE_NAME -f $DOCKERFILE . || {
   echo ""
   echo "ERROR: Oracle Database Docker Image was NOT successfully created."
@@ -47,8 +48,9 @@ docker build --force-rm=true --no-cache=true \
   exit 1
 }
 
-# Remove dangling images (intermitten images with tag <none>)
-yes | docker image prune > /dev/null
+# Remove dangling images (intermittent images with tag <none>)
+docker image prune -f > /dev/null
+docker buildx prune -f > /dev/null
 
 BUILD_END=$(date '+%s')
 BUILD_ELAPSED=`expr $BUILD_END - $BUILD_START`
