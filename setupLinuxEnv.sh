@@ -37,6 +37,7 @@ mkdir -p $ORACLE_BASE/scripts/setup && \
 mkdir $ORACLE_BASE/scripts/startup && \
 ln -s $ORACLE_BASE/scripts /docker-entrypoint-initdb.d && \
 mkdir $ORACLE_BASE/oradata && \
+mkdir $ORACLE_BASE/archivelog && \
 mkdir -p $ORACLE_HOME && \
 chmod ug+x $ORACLE_BASE/*.sh && \
 yum -y install $DB_INSTALL_PKG tar openssl vim-enhanced net-tools git sudo wget && \

@@ -99,12 +99,19 @@ rm $ORACLE_BASE/dbca.rsp
 
 LOGDIR=$ORACLE_BASE/archivelog
 
+if [ ! -d "$LOGDIR" ]; then
+   mkdir -p "$LOGDIR" || sudo -n mkdir -p "$LOGDIR"
+fi
+if [ ! -w "$LOGDIR" ]; then
+   sudo -n chown -R oracle:dba "$LOGDIR" || err_exit "$LOGDIR is not writable by oracle"
+fi
+
 echo -n "Setting archive log destination to $LOGDIR ..."
 sqlplus -S / as sysdba << EOF
    set heading off;
    set pagesize 0;
    set feedback off;
-   ALTER SYSTEM SET log_archive_dest_1='location=$LOGDIR' SCOPE=spfile;
+   ALTER SYSTEM SET log_archive_dest_1='LOCATION=$LOGDIR' SCOPE=spfile;
    exit;
 EOF
 if [ $? -ne 0 ]; then

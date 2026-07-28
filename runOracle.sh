@@ -167,6 +167,19 @@ export ORACLE_CHARACTERSET=${ORACLE_CHARACTERSET:-AL32UTF8}
 
 showEnvironment
 
+# Ensure archive log destination exists and is writable by oracle.
+# Named/bind volume mounts are often created as root:root; without this,
+# ARCHIVELOG databases fail on restart with ORA-19504/ORA-27040 (Permission denied).
+if [ ! -d "$ORACLE_BASE/archivelog" ]; then
+   mkdir -p "$ORACLE_BASE/archivelog" || sudo -n mkdir -p "$ORACLE_BASE/archivelog"
+fi
+if [ ! -w "$ORACLE_BASE/archivelog" ]; then
+   sudo -n chown -R oracle:dba "$ORACLE_BASE/archivelog" || {
+      echo "Error: $ORACLE_BASE/archivelog is not writable by oracle."
+      exit 1
+   }
+fi
+
 # Check whether database already exists
 SID_UPPER=${ORACLE_SID^^}
 if [ -d $ORACLE_BASE/oradata/$ORACLE_SID -o -d $ORACLE_BASE/oradata/$SID_UPPER -o -d $ORACLE_BASE/oradata/dbconfig -o -d $ORACLE_BASE/archivelog/dbconfig ]; then
